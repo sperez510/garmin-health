@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>None · Health Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#060810; --panel:#0d1117; --panel2:#141b24;
+  --border:rgba(99,179,237,0.1); --border2:rgba(255,255,255,0.05);
+  --text:#e2e8f0; --muted:#4a5568; --muted2:#718096;
+  --cyan:#63b3ed; --green:#48bb78; --yellow:#ecc94b;
+  --red:#fc8181; --purple:#b794f4; --teal:#4fd1c5; --orange:#f6ad55;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Mono',monospace;min-height:100vh;padding:0}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:1000}
+.topnav{display:flex;align-items:center;justify-content:space-between;padding:14px 32px;border-bottom:1px solid var(--border);background:rgba(6,8,16,0.96);backdrop-filter:blur(8px);position:sticky;top:0;z-index:100}
+.logo-name{font-size:14px;font-weight:600} .logo-sub{font-size:9px;color:var(--muted2);letter-spacing:.15em;text-transform:uppercase;margin-top:2px}
+.nav-meta{display:flex;align-items:center;gap:20px;font-size:10px;color:var(--muted)}
+.live{display:inline-flex;align-items:center;gap:5px;color:var(--green)}
+.live::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.main{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 57px)}
+.sidebar{border-right:1px solid var(--border);padding:16px 0;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto}
+.sidebar-label{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);padding:0 16px;margin-bottom:4px;margin-top:16px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 16px;font-size:11px;color:var(--muted2);cursor:pointer;transition:.15s;border-left:2px solid transparent}
+.nav-item:hover{background:var(--panel2);color:var(--text)}
+.nav-item.active{background:rgba(99,179,237,0.08);color:var(--cyan);border-left-color:var(--cyan)}
+.content{padding:28px 32px;overflow-y:auto}
+.view{display:none} .view.active{display:block}
+.section-title{display:flex;align-items:baseline;gap:12px;margin-bottom:24px}
+.section-title h2{font-size:18px;font-weight:600;letter-spacing:-.02em}
+.period{font-size:10px;color:var(--muted2);letter-spacing:.1em;text-transform:uppercase}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px}
+.stat{background:var(--panel);border:1px solid var(--border2);border-radius:10px;padding:16px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;border-radius:10px 10px 0 0}
+.stat.c-cyan::after{background:var(--cyan)} .stat.c-green::after{background:var(--green)}
+.stat.c-red::after{background:var(--red)} .stat.c-yellow::after{background:var(--yellow)}
+.stat.c-purple::after{background:var(--purple)} .stat.c-teal::after{background:var(--teal)}
+.stat-label{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.stat-value{font-size:26px;font-weight:600;letter-spacing:-.03em;line-height:1}
+.stat-unit{font-size:11px;font-weight:400;color:var(--muted2);margin-left:2px}
+.stat-sub{font-size:10px;color:var(--muted);margin-top:5px}
+.badge{position:absolute;top:12px;right:12px;font-size:9px;padding:2px 6px;border-radius:3px}
+.bg{background:rgba(72,187,120,.15);color:var(--green)} .bw{background:rgba(236,201,75,.15);color:var(--yellow)} .br{background:rgba(252,129,129,.15);color:var(--red)}
+.panel{background:var(--panel);border:1px solid var(--border2);border-radius:10px;padding:20px;margin-bottom:20px}
+.panel-title{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted2);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.info-tag{font-size:9px;letter-spacing:0;text-transform:none;padding:2px 8px;background:var(--panel2);border:1px solid var(--border2);border-radius:10px;color:var(--muted)}
+canvas{display:block}
+.data-table{width:100%;border-collapse:collapse;font-size:11px}
+.data-table th{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+.data-table td{padding:7px 8px;border-bottom:1px solid var(--border2);color:var(--muted2);vertical-align:middle}
+.data-table tr:hover td{background:var(--panel2);color:var(--text)}
+.tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;letter-spacing:.04em}
+.tp{background:rgba(99,179,237,.15);color:var(--cyan)} .th{background:rgba(72,187,120,.15);color:var(--green)}
+.tm{background:rgba(236,201,75,.15);color:var(--yellow)} .tl{background:rgba(246,173,85,.15);color:var(--orange)}
+.tpoor{background:rgba(252,129,129,.15);color:var(--red)}
+.insight-card{display:flex;gap:12px;padding:12px 14px;background:var(--panel2);border-radius:8px;border-left:3px solid;font-size:11px;line-height:1.55;margin-bottom:8px}
+.ic-crit{border-color:var(--red)} .ic-warn{border-color:var(--yellow)} .ic-good{border-color:var(--green)} .ic-info{border-color:var(--cyan)}
+.ih{font-weight:600;font-size:11px;margin-bottom:3px}
+.ic-crit .ih{color:var(--red)} .ic-warn .ih{color:var(--yellow)} .ic-good .ih{color:var(--green)} .ic-info .ih{color:var(--cyan)}
+.ib{color:var(--muted2)}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border2);font-size:11px}
+.mrow:last-child{border:none} .mk{color:var(--muted);font-size:10px;letter-spacing:.05em} .mv{font-weight:500}
+.chart-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:10px;color:var(--muted)}
+.ll{display:flex;align-items:center;gap:5px}
+.lb{width:16px;height:2px;border-radius:1px}
+.sleep-bar{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:1px}
+.sd{background:var(--teal)} .sr{background:var(--purple)} .sl{background:var(--cyan);opacity:.7}
+.goal-card{background:var(--panel2);border:1px solid var(--border2);border-radius:8px;padding:14px;margin-bottom:12px}
+.gp{height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;margin:6px 0}
+.gf{height:100%;border-radius:2px}
+.gm{display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}
+::-webkit-scrollbar{width:4px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:var(--panel2);border-radius:2px}
+@media(max-width:768px){.main{grid-template-columns:1fr}.sidebar{display:none}.grid-4{grid-template-columns:repeat(2,1fr)}.grid-2,.grid-2-1{grid-template-columns:1fr}}
+.update-bar{background:rgba(99,179,237,.06);border-bottom:1px solid var(--border);padding:6px 32px;font-size:10px;color:var(--muted2);text-align:right}
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div>
+    <div class="logo-name">None · Health Dashboard</div>
+    <div class="logo-sub">Garmin Epix Gen 2 · Auto-actualizado</div>
+  </div>
+  <div class="nav-meta">
+    <span class="live">Datos en vivo</span>
+    <span id="last-update">—</span>
+    <span style="color:var(--cyan)">Cali, Colombia</span>
+  </div>
+</div>
+
+<div class="update-bar">Última actualización: <strong id="update-date">—</strong> · GitHub Actions actualiza cada noche automáticamente</div>
+
+<div class="main">
+  <nav class="sidebar">
+    <div class="sidebar-label">Vistas</div>
+    <div class="nav-item active" onclick="showView('overview')">◈ Resumen</div>
+    <div class="nav-item" onclick="showView('hrv')">♥ VFC / HRV</div>
+    <div class="nav-item" onclick="showView('sleep')">◑ Sueño</div>
+    <div class="nav-item" onclick="showView('readiness')">⚡ Readiness</div>
+    <div class="nav-item" onclick="showView('activities')">🏃 Actividades</div>
+    <div class="nav-item" onclick="showView('goals')">◎ Metas</div>
+    <div class="sidebar-label">Período</div>
+    <div class="nav-item active" id="p7"  onclick="setPeriod(7,this)">· 7 días</div>
+    <div class="nav-item" id="p30" onclick="setPeriod(30,this)">· 30 días</div>
+    <div class="nav-item" id="pAll" onclick="setPeriod(999,this)">· Todo</div>
+  </nav>
+
+  <div class="content">
+
+    <!-- OVERVIEW -->
+    <div id="view-overview" class="view active">
+      <div class="section-title"><h2>Resumen</h2><span class="period" id="ov-period">Últimos 7 días</span></div>
+      <div class="grid-4">
+        <div class="stat c-cyan"><div class="stat-label">VFC Promedio</div><div class="stat-value" id="kv-hrv">—<span class="stat-unit">ms</span></div><div class="stat-sub" id="kv-hrv-s">—</div><div class="badge" id="kv-hrv-b">—</div></div>
+        <div class="stat c-purple"><div class="stat-label">Sueño Promedio</div><div class="stat-value" id="kv-sl">—<span class="stat-unit">h</span></div><div class="stat-sub" id="kv-sl-s">—</div><div class="badge" id="kv-sl-b">—</div></div>
+        <div class="stat c-green"><div class="stat-label">Readiness Prom.</div><div class="stat-value" id="kv-tr">—<span class="stat-unit">/100</span></div><div class="stat-sub" id="kv-tr-s">—</div><div class="badge" id="kv-tr-b">—</div></div>
+        <div class="stat c-teal"><div class="stat-label">HR Reposo</div><div class="stat-value" id="kv-hr">—<span class="stat-unit">bpm</span></div><div class="stat-sub">Frecuencia en reposo</div></div>
+      </div>
+      <div class="grid-2-1">
+        <div class="panel">
+          <div class="panel-title">VFC + Readiness <span class="info-tag" id="ov-chart-label">7 días</span></div>
+          <canvas id="ov-chart" height="140"></canvas>
+          <div class="chart-legend">
+            <div class="ll"><div class="lb" style="background:var(--cyan)"></div>VFC (ms)</div>
+            <div class="ll"><div class="lb" style="background:var(--yellow)"></div>Readiness</div>
+          </div>
+        </div>
+        <div class="panel"><div class="panel-title">Estado Actual</div><div id="ov-insights"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Historial de Sueño <span class="info-tag" id="sl-tbl-label">7 días</span></div>
+        <table class="data-table"><thead><tr><th>Fecha</th><th>Total</th><th>Profundo</th><th>REM</th><th>Ligero</th><th>Distribución</th><th>Resp.</th><th>SpO₂</th></tr></thead>
+        <tbody id="sl-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- HRV -->
+    <div id="view-hrv" class="view">
+      <div class="section-title"><h2>VFC · HRV</h2><span class="period">Historial completo</span></div>
+      <div class="grid-4">
+        <div class="stat c-cyan"><div class="stat-label">Prom. 30 días</div><div class="stat-value" id="hv-avg">—<span class="stat-unit">ms</span></div></div>
+        <div class="stat c-red"><div class="stat-label">Mínimo 30d</div><div class="stat-value" id="hv-min">—<span class="stat-unit">ms</span></div></div>
+        <div class="stat c-green"><div class="stat-label">Máximo 30d</div><div class="stat-value" id="hv-max">—<span class="stat-unit">ms</span></div></div>
+        <div class="stat c-yellow"><div class="stat-label">Estado Actual</div><div class="stat-value" id="hv-status" style="font-size:16px">—</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">VFC Diaria <span class="info-tag">Historial completo</span></div>
+        <canvas id="hrv-chart" height="160"></canvas>
+      </div>
+      <div class="grid-2">
+        <div class="panel"><div class="panel-title">Calendario VFC (últimos 30d)</div><div id="hrv-cal"></div></div>
+        <div class="panel"><div class="panel-title">Correlación VFC → Readiness</div><canvas id="hrv-scatter" height="160"></canvas></div>
+      </div>
+    </div>
+
+    <!-- SLEEP -->
+    <div id="view-sleep" class="view">
+      <div class="section-title"><h2>Sueño</h2><span class="period">Historial completo</span></div>
+      <div class="grid-4">
+        <div class="stat c-purple"><div class="stat-label">Total Prom. 30d</div><div class="stat-value" id="sv-avg">—<span class="stat-unit">h</span></div><div class="stat-sub">Meta: ≥7.5h</div></div>
+        <div class="stat c-teal"><div class="stat-label">Profundo Prom.</div><div class="stat-value" id="sv-deep">—<span class="stat-unit">m</span></div><div class="stat-sub">Meta: ≥60 min</div></div>
+        <div class="stat c-cyan"><div class="stat-label">REM Promedio</div><div class="stat-value" id="sv-rem">—<span class="stat-unit">m</span></div><div class="stat-sub">Meta: ≥90 min</div></div>
+        <div class="stat c-orange"><div class="stat-label">Resp. Nocturna</div><div class="stat-value" id="sv-resp">—<span class="stat-unit">rpm</span></div><div class="stat-sub">Normal: 12–20</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Duración por noche <span class="info-tag">Profundo · REM · Ligero</span></div>
+        <canvas id="sl-chart" height="160"></canvas>
+      </div>
+    </div>
+
+    <!-- READINESS -->
+    <div id="view-readiness" class="view">
+      <div class="section-title"><h2>Training Readiness</h2><span class="period">Historial completo</span></div>
+      <div class="grid-4">
+        <div class="stat c-green"><div class="stat-label">Mejor Score</div><div class="stat-value" id="tr-max">—<span class="stat-unit">/100</span></div><div class="stat-sub" id="tr-max-d">—</div></div>
+        <div class="stat c-yellow"><div class="stat-label">Prom. 30d</div><div class="stat-value" id="tr-avg">—<span class="stat-unit">/100</span></div></div>
+        <div class="stat c-red"><div class="stat-label">Días LOW/POOR 30d</div><div class="stat-value" id="tr-bad">—<span class="stat-unit">d</span></div></div>
+        <div class="stat c-cyan"><div class="stat-label">Score Hoy</div><div class="stat-value" id="tr-today">—<span class="stat-unit">/100</span></div><div class="stat-sub" id="tr-today-l">—</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title">Training Readiness diario</div>
+        <canvas id="tr-chart" height="150"></canvas>
+      </div>
+    </div>
+
+    <!-- ACTIVITIES -->
+    <div id="view-activities" class="view">
+      <div class="section-title"><h2>Actividades</h2><span class="period">Recientes</span></div>
+      <div class="panel">
+        <div class="panel-title">Últimas actividades registradas</div>
+        <table class="data-table"><thead><tr><th>Fecha</th><th>Tipo</th><th>Nombre</th><th>Duración</th><th>Distancia</th><th>HR Avg</th><th>HR Max</th><th>Cal.</th></tr></thead>
+        <tbody id="act-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- GOALS -->
+    <div id="view-goals" class="view">
+      <div class="section-title"><h2>Metas & Proyección</h2><span class="period">Basado en historial real</span></div>
+      <div class="grid-3" id="goals-grid"></div>
+      <div class="panel">
+        <div class="panel-title">Plan de entrenamiento según VFC actual</div>
+        <table class="data-table">
+          <thead><tr><th>VFC</th><th>Estado</th><th>Natación</th><th>Series</th><th>Descanso</th><th>Intensidad</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--red)">&lt;40ms</td><td><span class="tag tpoor">POOR</span></td><td>No nadar</td><td>—</td><td>—</td><td style="color:var(--red)">Solo movilidad</td></tr>
+            <tr><td style="color:var(--orange)">40–55ms</td><td><span class="tag tl">LOW</span></td><td>Técnica solo</td><td>6×34m</td><td>2:00</td><td style="color:var(--orange)">Z1 &lt;120bpm</td></tr>
+            <tr id="tr-current-row"><td style="color:var(--yellow)">56–70ms</td><td><span class="tag tm">MODERATE</span></td><td>Base aeróbica</td><td>10×34m</td><td>1:45</td><td style="color:var(--yellow)">Z1–Z2 120–140bpm</td></tr>
+            <tr><td style="color:var(--green)">71–85ms</td><td><span class="tag th">HIGH</span></td><td>Volumen</td><td>12×34m</td><td>1:30</td><td style="color:var(--green)">Z2 130–145bpm</td></tr>
+            <tr><td style="color:var(--cyan)">≥86ms</td><td><span class="tag tp">PRIME</span></td><td>Intervalos</td><td>10×50m</td><td>1:15</td><td style="color:var(--cyan)">Z3–Z4 145–170bpm</td></tr>
+          </tbody>
+        </table>
+        <div id="goals-swim-advice" style="margin-top:12px;padding:10px;border-radius:6px;font-size:10px;"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const D = {"sleep": [{"date": "2025-12-13", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-14", "total": 6.15, "deep": 70, "rem": 0, "light": 299, "score": 38, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-15", "total": 7.25, "deep": 107, "rem": 97, "light": 231, "score": 88, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-16", "total": 7.33, "deep": 100, "rem": 74, "light": 266, "score": 78, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-17", "total": 7.93, "deep": 91, "rem": 60, "light": 325, "score": 83, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-18", "total": 7.67, "deep": 108, "rem": 90, "light": 262, "score": 89, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-19", "total": 6.35, "deep": 113, "rem": 50, "light": 218, "score": 71, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-20", "total": 6.7, "deep": 117, "rem": 91, "light": 194, "score": 84, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-21", "total": 7.37, "deep": 90, "rem": 43, "light": 309, "score": 74, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-22", "total": 6.52, "deep": 86, "rem": 51, "light": 254, "score": 76, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-23", "total": 6.63, "deep": 85, "rem": 64, "light": 249, "score": 78, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-24", "total": 6.25, "deep": 100, "rem": 72, "light": 203, "score": 78, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-25", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-26", "total": 6.25, "deep": 72, "rem": 63, "light": 240, "score": 77, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-27", "total": 3.52, "deep": 81, "rem": 0, "light": 130, "score": 40, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-28", "total": 6.88, "deep": 104, "rem": 51, "light": 258, "score": 81, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-29", "total": 3.68, "deep": 69, "rem": 8, "light": 144, "score": 31, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-30", "total": 7.42, "deep": 100, "rem": 62, "light": 283, "score": 83, "resp": null, "hr": null, "spo2": null}, {"date": "2025-12-31", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-01", "total": 3.85, "deep": 71, "rem": 22, "light": 138, "score": 48, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-02", "total": 5.22, "deep": 98, "rem": 14, "light": 201, "score": 58, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-03", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-04", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-05", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-06", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-07", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-08", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-09", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-10", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-11", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-12", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-13", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-14", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-15", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-16", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-17", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-18", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-19", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-20", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-21", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-22", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-23", "total": 7.78, "deep": 69, "rem": 111, "light": 287, "score": 91, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-24", "total": 8.02, "deep": 104, "rem": 71, "light": 306, "score": 85, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-25", "total": 5.43, "deep": 59, "rem": 48, "light": 219, "score": 64, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-26", "total": 7.97, "deep": 147, "rem": 100, "light": 231, "score": 83, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-27", "total": 6.32, "deep": 108, "rem": 56, "light": 215, "score": 76, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-28", "total": 7.07, "deep": 83, "rem": 70, "light": 271, "score": 62, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-29", "total": 8.02, "deep": 78, "rem": 50, "light": 353, "score": 75, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-30", "total": 5.02, "deep": 74, "rem": 36, "light": 191, "score": 45, "resp": null, "hr": null, "spo2": null}, {"date": "2026-01-31", "total": 8.68, "deep": 76, "rem": 129, "light": 316, "score": 92, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-01", "total": 7.2, "deep": 56, "rem": 60, "light": 316, "score": 80, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-02", "total": 6.77, "deep": 94, "rem": 84, "light": 228, "score": 79, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-03", "total": 6.85, "deep": 90, "rem": 75, "light": 246, "score": 66, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-04", "total": 6.33, "deep": 120, "rem": 48, "light": 212, "score": 73, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-05", "total": 7.08, "deep": 79, "rem": 43, "light": 303, "score": 61, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-06", "total": 1.18, "deep": 46, "rem": 0, "light": 25, "score": 13, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-07", "total": 9.67, "deep": 105, "rem": 69, "light": 406, "score": 80, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-08", "total": 5.53, "deep": 103, "rem": 11, "light": 218, "score": 58, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-09", "total": 7.17, "deep": 50, "rem": 113, "light": 267, "score": 85, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-10", "total": 7.72, "deep": 113, "rem": 84, "light": 266, "score": 84, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-11", "total": 6.83, "deep": 105, "rem": 55, "light": 250, "score": 75, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-12", "total": 6.87, "deep": 112, "rem": 49, "light": 251, "score": 75, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-13", "total": 6.08, "deep": 84, "rem": 46, "light": 235, "score": 74, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-14", "total": 0.0, "deep": 0, "rem": 0, "light": 0, "score": null, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-15", "total": 7.05, "deep": 78, "rem": 27, "light": 318, "score": 65, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-16", "total": 6.9, "deep": 93, "rem": 51, "light": 270, "score": 70, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-17", "total": 6.08, "deep": 105, "rem": 0, "light": 260, "score": 49, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-18", "total": 7.22, "deep": 94, "rem": 62, "light": 277, "score": 82, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-19", "total": 7.02, "deep": 60, "rem": 47, "light": 314, "score": 75, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-20", "total": 5.73, "deep": 95, "rem": 39, "light": 210, "score": 68, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-21", "total": 3.25, "deep": 72, "rem": 0, "light": 123, "score": 18, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-22", "total": 8.43, "deep": 130, "rem": 74, "light": 302, "score": 91, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-23", "total": 7.12, "deep": 112, "rem": 49, "light": 266, "score": 82, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-24", "total": 6.77, "deep": 87, "rem": 59, "light": 260, "score": 68, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-25", "total": 7.18, "deep": 106, "rem": 111, "light": 214, "score": 80, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-26", "total": 7.15, "deep": 90, "rem": 51, "light": 288, "score": 80, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-27", "total": 6.32, "deep": 100, "rem": 15, "light": 264, "score": 59, "resp": null, "hr": null, "spo2": null}, {"date": "2026-02-28", "total": 7.63, "deep": 99, "rem": 60, "light": 299, "score": 75, "resp": null, "hr": null, "spo2": 93.0}, {"date": "2026-03-01", "total": 9.68, "deep": 90, "rem": 101, "light": 390, "score": 89, "resp": null, "hr": null, "spo2": 96.0}, {"date": "2026-03-02", "total": 6.87, "deep": 83, "rem": 80, "light": 249, "score": 78, "resp": null, "hr": null, "spo2": 93.0}, {"date": "2026-03-03", "total": 6.32, "deep": 88, "rem": 73, "light": 218, "score": 73, "resp": null, "hr": null, "spo2": 95.0}, {"date": "2026-03-04", "total": 5.82, "deep": 80, "rem": 42, "light": 227, "score": 58, "resp": null, "hr": null, "spo2": 95.0}, {"date": "2026-03-05", "total": 7.2, "deep": 72, "rem": 40, "light": 320, "score": 72, "resp": null, "hr": null, "spo2": 94.0}, {"date": "2026-03-06", "total": 6.83, "deep": 93, "rem": 71, "light": 246, "score": 77, "resp": null, "hr": null, "spo2": 96.0}, {"date": "2026-03-07", "total": 4.17, "deep": 94, "rem": 40, "light": 116, "score": 52, "resp": null, "hr": null, "spo2": 94.0}, {"date": "2026-03-08", "total": 4.62, "deep": 69, "rem": 0, "light": 208, "score": 42, "resp": null, "hr": null, "spo2": 93.0}, {"date": "2026-03-09", "total": 3.98, "deep": 88, "rem": 0, "light": 151, "score": 30, "resp": null, "hr": null, "spo2": 96.0}, {"date": "2026-03-10", "total": 5.32, "deep": 64, "rem": 13, "light": 242, "score": 56, "resp": null, "hr": null, "spo2": 93.0}, {"date": "2026-03-11", "total": 8.42, "deep": 59, "rem": 78, "light": 368, "score": 82, "resp": null, "hr": null, "spo2": 96.0}, {"date": "2026-03-12", "total": 7.53, "deep": 73, "rem": 72, "light": 307, "score": 82, "resp": null, "hr": null, "spo2": 95.0}, {"date": "2026-03-13", "total": 7.43, "deep": 92, "rem": 73, "light": 281, "score": 85, "resp": null, "hr": null, "spo2": 94.0}], "hrv": [{"date": "2026-01-23", "weekly_avg": null, "last_night": null, "status": "NONE"}, {"date": "2026-01-24", "weekly_avg": null, "last_night": null, "status": "NONE"}, {"date": "2026-01-25", "weekly_avg": null, "last_night": null, "status": "NONE"}, {"date": "2026-01-26", "weekly_avg": 82, "last_night": null, "status": "BALANCED"}, {"date": "2026-01-27", "weekly_avg": 83, "last_night": null, "status": "BALANCED"}, {"date": "2026-01-28", "weekly_avg": 81, "last_night": null, "status": "BALANCED"}, {"date": "2026-01-29", "weekly_avg": 82, "last_night": null, "status": "BALANCED"}, {"date": "2026-01-30", "weekly_avg": 83, "last_night": null, "status": "BALANCED"}, {"date": "2026-01-31", "weekly_avg": 82, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-01", "weekly_avg": 82, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-02", "weekly_avg": 81, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-03", "weekly_avg": 81, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-04", "weekly_avg": 82, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-05", "weekly_avg": 80, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-06", "weekly_avg": 73, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-07", "weekly_avg": 70, "last_night": null, "status": "UNBALANCED"}, {"date": "2026-02-08", "weekly_avg": 69, "last_night": null, "status": "UNBALANCED"}, {"date": "2026-02-09", "weekly_avg": 69, "last_night": null, "status": "UNBALANCED"}, {"date": "2026-02-10", "weekly_avg": 69, "last_night": null, "status": "UNBALANCED"}, {"date": "2026-02-11", "weekly_avg": 69, "last_night": null, "status": "UNBALANCED"}, {"date": "2026-02-12", "weekly_avg": 69, "last_night": null, "status": "UNBALANCED"}, {"date": "2026-02-13", "weekly_avg": 78, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-14", "weekly_avg": 81, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-15", "weekly_avg": 79, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-16", "weekly_avg": 79, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-17", "weekly_avg": 71, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-18", "weekly_avg": 71, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-19", "weekly_avg": 73, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-20", "weekly_avg": 71, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-21", "weekly_avg": 65, "last_night": null, "status": "UNBALANCED"}, {"date": "2026-02-22", "weekly_avg": 67, "last_night": null, "status": "UNBALANCED"}, {"date": "2026-02-23", "weekly_avg": 67, "last_night": null, "status": "UNBALANCED"}, {"date": "2026-02-24", "weekly_avg": 72, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-25", "weekly_avg": 73, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-26", "weekly_avg": 72, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-27", "weekly_avg": 70, "last_night": null, "status": "BALANCED"}, {"date": "2026-02-28", "weekly_avg": 77, "last_night": null, "status": "BALANCED"}, {"date": "2026-03-01", "weekly_avg": 78, "last_night": null, "status": "BALANCED"}, {"date": "2026-03-02", "weekly_avg": 76, "last_night": null, "status": "BALANCED"}, {"date": "2026-03-03", "weekly_avg": 73, "last_night": null, "status": "BALANCED"}, {"date": "2026-03-04", "weekly_avg": 69, "last_night": null, "status": "BALANCED"}, {"date": "2026-03-05", "weekly_avg": 69, "last_night": null, "status": "BALANCED"}, {"date": "2026-03-06", "weekly_avg": 72, "last_night": null, "status": "BALANCED"}, {"date": "2026-03-07", "weekly_avg": 69, "last_night": null, "status": "BALANCED"}, {"date": "2026-03-08", "weekly_avg": 66, "last_night": null, "status": "UNBALANCED"}, {"date": "2026-03-09", "weekly_avg": 58, "last_night": null, "status": "LOW"}, {"date": "2026-03-10", "weekly_avg": 56, "last_night": null, "status": "LOW"}, {"date": "2026-03-11", "weekly_avg": 59, "last_night": null, "status": "LOW"}, {"date": "2026-03-12", "weekly_avg": 59, "last_night": null, "status": "LOW"}, {"date": "2026-03-13", "weekly_avg": 58, "last_night": null, "status": "LOW"}], "readiness": [], "hr": [{"date": "2025-12-13", "resting": 61, "max": 109, "min": 65}, {"date": "2025-12-14", "resting": 60, "max": 121, "min": 57}, {"date": "2025-12-15", "resting": 50, "max": 143, "min": 49}, {"date": "2025-12-16", "resting": 56, "max": 153, "min": 53}, {"date": "2025-12-17", "resting": 57, "max": 125, "min": 55}, {"date": "2025-12-18", "resting": 51, "max": 113, "min": 49}, {"date": "2025-12-19", "resting": 59, "max": 125, "min": 55}, {"date": "2025-12-20", "resting": 50, "max": 119, "min": 50}, {"date": "2025-12-21", "resting": 56, "max": 123, "min": 53}, {"date": "2025-12-22", "resting": 54, "max": 119, "min": 51}, {"date": "2025-12-23", "resting": 55, "max": 129, "min": 53}, {"date": "2025-12-24", "resting": 54, "max": 153, "min": 52}, {"date": "2025-12-25", "resting": 58, "max": 112, "min": 55}, {"date": "2025-12-26", "resting": 53, "max": 120, "min": 50}, {"date": "2025-12-27", "resting": 59, "max": 155, "min": 58}, {"date": "2025-12-28", "resting": 56, "max": 131, "min": 54}, {"date": "2025-12-29", "resting": 60, "max": 149, "min": 64}, {"date": "2025-12-30", "resting": 53, "max": 141, "min": 51}, {"date": "2025-12-31", "resting": 60, "max": 120, "min": 68}, {"date": "2026-01-01", "resting": 61, "max": 118, "min": 59}, {"date": "2026-01-02", "resting": 59, "max": 104, "min": 55}, {"date": "2026-01-03", "resting": null, "max": null, "min": null}, {"date": "2026-01-04", "resting": null, "max": null, "min": null}, {"date": "2026-01-05", "resting": null, "max": null, "min": null}, {"date": "2026-01-06", "resting": null, "max": null, "min": null}, {"date": "2026-01-07", "resting": null, "max": null, "min": null}, {"date": "2026-01-08", "resting": null, "max": null, "min": null}, {"date": "2026-01-09", "resting": null, "max": null, "min": null}, {"date": "2026-01-10", "resting": null, "max": null, "min": null}, {"date": "2026-01-11", "resting": null, "max": null, "min": null}, {"date": "2026-01-12", "resting": null, "max": null, "min": null}, {"date": "2026-01-13", "resting": null, "max": null, "min": null}, {"date": "2026-01-14", "resting": null, "max": null, "min": null}, {"date": "2026-01-15", "resting": null, "max": null, "min": null}, {"date": "2026-01-16", "resting": null, "max": null, "min": null}, {"date": "2026-01-17", "resting": null, "max": null, "min": null}, {"date": "2026-01-18", "resting": null, "max": null, "min": null}, {"date": "2026-01-19", "resting": null, "max": null, "min": null}, {"date": "2026-01-20", "resting": null, "max": null, "min": null}, {"date": "2026-01-21", "resting": null, "max": null, "min": null}, {"date": "2026-01-22", "resting": 63, "max": 99, "min": 59}, {"date": "2026-01-23", "resting": 56, "max": 129, "min": 54}, {"date": "2026-01-24", "resting": 55, "max": 147, "min": 52}, {"date": "2026-01-25", "resting": 56, "max": 112, "min": 54}, {"date": "2026-01-26", "resting": 51, "max": 119, "min": 50}, {"date": "2026-01-27", "resting": 51, "max": 160, "min": 50}, {"date": "2026-01-28", "resting": 55, "max": 119, "min": 52}, {"date": "2026-01-29", "resting": 51, "max": 146, "min": 50}, {"date": "2026-01-30", "resting": 57, "max": 125, "min": 54}, {"date": "2026-01-31", "resting": 53, "max": 146, "min": 51}, {"date": "2026-02-01", "resting": 56, "max": 110, "min": 53}, {"date": "2026-02-02", "resting": 52, "max": 114, "min": 50}, {"date": "2026-02-03", "resting": 53, "max": 125, "min": 50}, {"date": "2026-02-04", "resting": 54, "max": 138, "min": 52}, {"date": "2026-02-05", "resting": 56, "max": 121, "min": 52}, {"date": "2026-02-06", "resting": 58, "max": 124, "min": 72}, {"date": "2026-02-07", "resting": 64, "max": 111, "min": 58}, {"date": "2026-02-08", "resting": 57, "max": 110, "min": 54}, {"date": "2026-02-09", "resting": 53, "max": 112, "min": 50}, {"date": "2026-02-10", "resting": 51, "max": 144, "min": 50}, {"date": "2026-02-11", "resting": 58, "max": 136, "min": 54}, {"date": "2026-02-12", "resting": 58, "max": 118, "min": 55}, {"date": "2026-02-13", "resting": 53, "max": 118, "min": 50}, {"date": "2026-02-14", "resting": 59, "max": 104, "min": 56}, {"date": "2026-02-15", "resting": 59, "max": 105, "min": 61}, {"date": "2026-02-16", "resting": 57, "max": 139, "min": 53}, {"date": "2026-02-17", "resting": 60, "max": 117, "min": 57}, {"date": "2026-02-18", "resting": 56, "max": 131, "min": 52}, {"date": "2026-02-19", "resting": 53, "max": 113, "min": 51}, {"date": "2026-02-20", "resting": 54, "max": 119, "min": 53}, {"date": "2026-02-21", "resting": 61, "max": 144, "min": 65}, {"date": "2026-02-22", "resting": 57, "max": 129, "min": 54}, {"date": "2026-02-23", "resting": 55, "max": 125, "min": 52}, {"date": "2026-02-24", "resting": 57, "max": 151, "min": 52}, {"date": "2026-02-25", "resting": 54, "max": 111, "min": 52}, {"date": "2026-02-26", "resting": 59, "max": 111, "min": 56}, {"date": "2026-02-27", "resting": 60, "max": 109, "min": 63}, {"date": "2026-02-28", "resting": 60, "max": 115, "min": 55}, {"date": "2026-03-01", "resting": 57, "max": 172, "min": 56}, {"date": "2026-03-02", "resting": 61, "max": 132, "min": 59}, {"date": "2026-03-03", "resting": 61, "max": 144, "min": 58}, {"date": "2026-03-04", "resting": 61, "max": 115, "min": 59}, {"date": "2026-03-05", "resting": 56, "max": 112, "min": 53}, {"date": "2026-03-06", "resting": 55, "max": 118, "min": 52}, {"date": "2026-03-07", "resting": 63, "max": 109, "min": 59}, {"date": "2026-03-08", "resting": 63, "max": 121, "min": 61}, {"date": "2026-03-09", "resting": 63, "max": 141, "min": 69}, {"date": "2026-03-10", "resting": 62, "max": 117, "min": 61}, {"date": "2026-03-11", "resting": 58, "max": 113, "min": 56}, {"date": "2026-03-12", "resting": 55, "max": 138, "min": 52}, {"date": "2026-03-13", "resting": 58, "max": 90, "min": 55}], "bb": [{"date": "2025-12-13", "min": 9, "max": 54, "end": 9}, {"date": "2025-12-14", "min": 5, "max": 41, "end": 19}, {"date": "2025-12-15", "min": 14, "max": 98, "end": 14}, {"date": "2025-12-16", "min": 11, "max": 87, "end": 11}, {"date": "2025-12-17", "min": 5, "max": 65, "end": 5}, {"date": "2025-12-18", "min": 5, "max": 81, "end": 21}, {"date": "2025-12-19", "min": 18, "max": 82, "end": 20}, {"date": "2025-12-20", "min": 11, "max": 97, "end": 11}, {"date": "2025-12-21", "min": 11, "max": 91, "end": 11}, {"date": "2025-12-22", "min": 5, "max": 81, "end": 5}, {"date": "2025-12-23", "min": 5, "max": 75, "end": 13}, {"date": "2025-12-24", "min": 6, "max": 91, "end": 6}, {"date": "2025-12-25", "min": 5, "max": 15, "end": 15}, {"date": "2025-12-26", "min": 5, "max": 84, "end": 5}, {"date": "2025-12-27", "min": 5, "max": 43, "end": 15}, {"date": "2025-12-28", "min": 14, "max": 89, "end": 14}, {"date": "2025-12-29", "min": 5, "max": 25, "end": 5}, {"date": "2025-12-30", "min": 5, "max": 93, "end": 20}, {"date": "2025-12-31", "min": 5, "max": 62, "end": 5}, {"date": "2026-01-01", "min": 5, "max": 42, "end": 7}, {"date": "2026-01-02", "min": 5, "max": 59, "end": 59}, {"date": "2026-01-22", "min": 78, "max": 87, "end": 78}, {"date": "2026-01-23", "min": 11, "max": 100, "end": 11}, {"date": "2026-01-24", "min": 9, "max": 100, "end": 19}, {"date": "2026-01-25", "min": 17, "max": 85, "end": 28}, {"date": "2026-01-26", "min": 25, "max": 100, "end": 25}, {"date": "2026-01-27", "min": 6, "max": 97, "end": 6}, {"date": "2026-01-28", "min": 5, "max": 85, "end": 5}, {"date": "2026-01-29", "min": 7, "max": 98, "end": 7}, {"date": "2026-01-30", "min": 5, "max": 59, "end": 5}, {"date": "2026-01-31", "min": 11, "max": 99, "end": 11}, {"date": "2026-02-01", "min": 8, "max": 86, "end": 25}, {"date": "2026-02-02", "min": 8, "max": 100, "end": 8}, {"date": "2026-02-03", "min": 7, "max": 86, "end": 7}, {"date": "2026-02-04", "min": 5, "max": 84, "end": 5}, {"date": "2026-02-05", "min": 5, "max": 81, "end": 5}, {"date": "2026-02-06", "min": 5, "max": 5, "end": 5}, {"date": "2026-02-07", "min": 5, "max": 74, "end": 16}, {"date": "2026-02-08", "min": 14, "max": 77, "end": 37}, {"date": "2026-02-09", "min": 10, "max": 98, "end": 10}, {"date": "2026-02-10", "min": 9, "max": 100, "end": 9}, {"date": "2026-02-11", "min": 5, "max": 75, "end": 5}, {"date": "2026-02-12", "min": 5, "max": 79, "end": 10}, {"date": "2026-02-13", "min": 9, "max": 92, "end": 10}, {"date": "2026-02-14", "min": 5, "max": 23, "end": 5}, {"date": "2026-02-15", "min": 5, "max": 54, "end": 5}, {"date": "2026-02-16", "min": 5, "max": 81, "end": 5}, {"date": "2026-02-17", "min": 5, "max": 42, "end": 5}, {"date": "2026-02-18", "min": 5, "max": 77, "end": 6}, {"date": "2026-02-19", "min": 6, "max": 90, "end": 6}, {"date": "2026-02-20", "min": 5, "max": 77, "end": 5}, {"date": "2026-02-21", "min": 5, "max": 10, "end": 5}, {"date": "2026-02-22", "min": 5, "max": 96, "end": 13}, {"date": "2026-02-23", "min": 5, "max": 96, "end": 5}, {"date": "2026-02-24", "min": 5, "max": 77, "end": 5}, {"date": "2026-02-25", "min": 5, "max": 87, "end": 5}, {"date": "2026-02-26", "min": 5, "max": 75, "end": 5}, {"date": "2026-02-27", "min": 5, "max": 44, "end": 13}, {"date": "2026-02-28", "min": 5, "max": 81, "end": 5}, {"date": "2026-03-01", "min": 6, "max": 93, "end": 6}, {"date": "2026-03-02", "min": 5, "max": 53, "end": 5}, {"date": "2026-03-03", "min": 5, "max": 61, "end": 5}, {"date": "2026-03-04", "min": 5, "max": 50, "end": 5}, {"date": "2026-03-05", "min": 5, "max": 84, "end": 5}, {"date": "2026-03-06", "min": 5, "max": 83, "end": 5}, {"date": "2026-03-07", "min": 5, "max": 28, "end": 5}, {"date": "2026-03-08", "min": 5, "max": 34, "end": 5}, {"date": "2026-03-09", "min": 5, "max": 8, "end": 5}, {"date": "2026-03-10", "min": 5, "max": 40, "end": 5}, {"date": "2026-03-11", "min": 5, "max": 86, "end": 8}, {"date": "2026-03-12", "min": 8, "max": 95, "end": 8}, {"date": "2026-03-13", "min": 14, "max": 84, "end": 84}], "stress": [{"date": "2025-12-13", "avg": 57, "max": 87, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-14", "avg": 32, "max": 87, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-15", "avg": 28, "max": 89, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-16", "avg": 40, "max": 95, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-17", "avg": 51, "max": 91, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-18", "avg": 27, "max": 85, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-19", "avg": 30, "max": 93, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-20", "avg": 35, "max": 93, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-21", "avg": 35, "max": 95, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-22", "avg": 46, "max": 94, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-23", "avg": 30, "max": 94, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-24", "avg": 28, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-25", "avg": 32, "max": 91, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-26", "avg": 48, "max": 94, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-27", "avg": 40, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-28", "avg": 34, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-29", "avg": 48, "max": 93, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-30", "avg": 31, "max": 94, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2025-12-31", "avg": 68, "max": 94, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-01", "avg": 47, "max": 92, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-02", "avg": 24, "max": 79, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-22", "avg": 21, "max": 73, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-23", "avg": 41, "max": 96, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-24", "avg": 34, "max": 91, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-25", "avg": 25, "max": 89, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-26", "avg": 27, "max": 92, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-27", "avg": 39, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-28", "avg": 40, "max": 98, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-29", "avg": 34, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-30", "avg": 35, "max": 92, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-01-31", "avg": 34, "max": 92, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-01", "avg": 27, "max": 89, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-02", "avg": 36, "max": 94, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-03", "avg": 37, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-04", "avg": 39, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-05", "avg": 46, "max": 99, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-06", "avg": 66, "max": 98, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-07", "avg": 33, "max": 96, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-08", "avg": 29, "max": 89, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-09", "avg": 37, "max": 92, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-10", "avg": 37, "max": 98, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-11", "avg": 49, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-12", "avg": 32, "max": 95, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-13", "avg": 35, "max": 91, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-14", "avg": 49, "max": 91, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-15", "avg": 35, "max": 93, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-16", "avg": 41, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-17", "avg": 46, "max": 94, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-18", "avg": 37, "max": 91, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-19", "avg": 39, "max": 91, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-20", "avg": 50, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-21", "avg": 53, "max": 99, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-22", "avg": 38, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-23", "avg": 43, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-24", "avg": 36, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-25", "avg": 51, "max": 95, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-26", "avg": 40, "max": 94, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-27", "avg": 41, "max": 91, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-02-28", "avg": 41, "max": 89, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-01", "avg": 50, "max": 98, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-02", "avg": 56, "max": 99, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-03", "avg": 40, "max": 97, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-04", "avg": 37, "max": 96, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-05", "avg": 41, "max": 91, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-06", "avg": 42, "max": 95, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-07", "avg": 48, "max": 93, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-08", "avg": 59, "max": 98, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-09", "avg": 54, "max": 99, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-10", "avg": 40, "max": 94, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-11", "avg": 37, "max": 93, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-12", "avg": 35, "max": 92, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}, {"date": "2026-03-13", "avg": 14, "max": 57, "rest_pct": 0, "low_pct": 0, "medium_pct": 0, "high_pct": 0}], "activities": [{"id": 22155215514, "date": "2026-03-12", "name": "Natación en piscina", "type": "lap_swimming", "duration": 1713.7340087890625, "distance": 357.0, "avg_hr": 127.0, "max_hr": 157.0, "calories": 274.0, "sport": "lap_swimming"}, {"id": 22053257512, "date": "2026-03-03", "name": "Upper C sábado", "type": "strength_training", "duration": 3311.14892578125, "distance": 0.0, "avg_hr": 125.0, "max_hr": 157.0, "calories": 390.0, "sport": "strength_training"}, {"id": 22030686202, "date": "2026-03-01", "name": "Fútbol", "type": "soccer", "duration": 611.0170288085938, "distance": 12.979999542236328, "avg_hr": 153.0, "max_hr": 184.0, "calories": 114.0, "sport": "soccer"}, {"id": 21971331725, "date": "2026-02-24", "name": "Upper C sábado", "type": "strength_training", "duration": 3158.305908203125, "distance": 0.0, "avg_hr": 118.0, "max_hr": 170.0, "calories": 327.0, "sport": "strength_training"}, {"id": 21891068602, "date": "2026-02-16", "name": "Upper C sábado", "type": "strength_training", "duration": 3023.080078125, "distance": 0.0, "avg_hr": 124.0, "max_hr": 161.0, "calories": 341.0, "sport": "strength_training"}, {"id": 21830573831, "date": "2026-02-10", "name": "Upper A", "type": "strength_training", "duration": 3690.076904296875, "distance": 0.0, "avg_hr": 115.0, "max_hr": 156.0, "calories": 340.0, "sport": "strength_training"}, {"id": 21809382131, "date": "2026-02-07", "name": "Cali Caminar", "type": "walking", "duration": 1456.4639892578125, "distance": 2130.81005859375, "avg_hr": 103.0, "max_hr": 111.0, "calories": 123.0, "sport": "walking"}, {"id": 21809381968, "date": "2026-02-07", "name": "Cali Caminar", "type": "walking", "duration": 1411.0369873046875, "distance": 2031.260009765625, "avg_hr": 95.0, "max_hr": 108.0, "calories": 120.0, "sport": "walking"}, {"id": 21762279244, "date": "2026-02-04", "name": "Upper A", "type": "strength_training", "duration": 3664.31005859375, "distance": 0.0, "avg_hr": 126.0, "max_hr": 162.0, "calories": 381.0, "sport": "strength_training"}, {"id": 21725646444, "date": "2026-01-31", "name": "Upper C sábado", "type": "strength_training", "duration": 3866.761962890625, "distance": 0.0, "avg_hr": 121.0, "max_hr": 168.0, "calories": 362.0, "sport": "strength_training"}, {"id": 21714094279, "date": "2026-01-30", "name": "Cali Caminar", "type": "walking", "duration": 831.02197265625, "distance": 1251.5799560546875, "avg_hr": 117.0, "max_hr": 127.0, "calories": 73.0, "sport": "walking"}, {"id": 21704096080, "date": "2026-01-29", "name": "Upper B jueves", "type": "strength_training", "duration": 5103.22802734375, "distance": 0.0, "avg_hr": 127.0, "max_hr": 164.0, "calories": 542.0, "sport": "strength_training"}, {"id": 21681062558, "date": "2026-01-27", "name": "Natación en piscina", "type": "lap_swimming", "duration": 1476.0169677734375, "distance": 510.0, "avg_hr": 140.0, "max_hr": 179.0, "calories": 242.0, "sport": "lap_swimming"}, {"id": 21665842603, "date": "2026-01-25", "name": "Cali Caminar", "type": "walking", "duration": 589.5089721679688, "distance": 973.22998046875, "avg_hr": 103.0, "max_hr": 117.0, "calories": 56.0, "sport": "walking"}, {"id": 21664995266, "date": "2026-01-25", "name": "Cali Caminar", "type": "walking", "duration": 427.47198486328125, "distance": 606.9099731445312, "avg_hr": 98.0, "max_hr": 110.0, "calories": 37.0, "sport": "walking"}, {"id": 21653129431, "date": "2026-01-24", "name": "Upper", "type": "strength_training", "duration": 2709.4599609375, "distance": 0.0, "avg_hr": 120.0, "max_hr": 164.0, "calories": 287.0, "sport": "strength_training"}, {"id": 21645077782, "date": "2026-01-23", "name": "Cali Caminar", "type": "walking", "duration": 1282.8480224609375, "distance": 1303.0999755859375, "avg_hr": 99.0, "max_hr": 116.0, "calories": 81.0, "sport": "walking"}, {"id": 21644889484, "date": "2026-01-23", "name": "Cali Caminar", "type": "walking", "duration": 2081.573974609375, "distance": 2673.1201171875, "avg_hr": 98.0, "max_hr": 112.0, "calories": 152.0, "sport": "walking"}, {"id": 21395413815, "date": "2025-12-30", "name": "Upper 2", "type": "strength_training", "duration": 2342.556884765625, "distance": 0.0, "avg_hr": 110.0, "max_hr": 161.0, "calories": 202.0, "sport": "strength_training"}, {"id": 21368846574, "date": "2025-12-27", "name": "Cali Caminar", "type": "walking", "duration": 1187.343017578125, "distance": 1652.7900390625, "avg_hr": 116.0, "max_hr": 140.0, "calories": 106.0, "sport": "walking"}, {"id": 21368604289, "date": "2025-12-27", "name": "Cali Caminar", "type": "walking", "duration": 1222.926025390625, "distance": 1658.719970703125, "avg_hr": 106.0, "max_hr": 117.0, "calories": 106.0, "sport": "walking"}, {"id": 21342287920, "date": "2025-12-24", "name": "Upper 2", "type": "strength_training", "duration": 2724.55908203125, "distance": 0.0, "avg_hr": 129.0, "max_hr": 172.0, "calories": 313.0, "sport": "strength_training"}, {"id": 21276519382, "date": "2025-12-16", "name": "Natación en piscina", "type": "lap_swimming", "duration": 1725.8570556640625, "distance": 459.0, "avg_hr": 128.0, "max_hr": 168.0, "calories": 210.0, "sport": "lap_swimming"}, {"id": 21268207647, "date": "2025-12-15", "name": "Cali Caminar", "type": "walking", "duration": 1194.583984375, "distance": 1615.5400390625, "avg_hr": 112.0, "max_hr": 130.0, "calories": 98.0, "sport": "walking"}, {"id": 21268207370, "date": "2025-12-15", "name": "Cali Caminar", "type": "walking", "duration": 867.93701171875, "distance": 1103.1400146484375, "avg_hr": 102.0, "max_hr": 115.0, "calories": 66.0, "sport": "walking"}, {"id": 21267645249, "date": "2025-12-15", "name": "Upper 2", "type": "strength_training", "duration": 2241.9130859375, "distance": 0.0, "avg_hr": 117.0, "max_hr": 160.0, "calories": 225.0, "sport": "strength_training"}, {"id": 21233793525, "date": "2025-12-11", "name": "Cali Caminar", "type": "walking", "duration": 1060.802001953125, "distance": 1392.3800048828125, "avg_hr": 101.0, "max_hr": 127.0, "calories": 90.0, "sport": "walking"}, {"id": 21233671402, "date": "2025-12-11", "name": "Cali Caminar", "type": "walking", "duration": 966.10400390625, "distance": 1259.5699462890625, "avg_hr": 96.0, "max_hr": 106.0, "calories": 77.0, "sport": "walking"}, {"id": 21215959992, "date": "2025-12-09", "name": "Cali Caminar", "type": "walking", "duration": 2771.800048828125, "distance": 4223.93017578125, "avg_hr": 105.0, "max_hr": 117.0, "calories": 244.0, "sport": "walking"}, {"id": 21207109414, "date": "2025-12-08", "name": "Natación en piscina", "type": "lap_swimming", "duration": 2.493000030517578, "distance": 0.0, "avg_hr": 87.0, "max_hr": 87.0, "calories": 0.0, "sport": "lap_swimming"}, {"id": 21206623233, "date": "2025-12-08", "name": "Natación en piscina", "type": "lap_swimming", "duration": 910.4650268554688, "distance": 187.0, "avg_hr": 127.0, "max_hr": 170.0, "calories": 128.0, "sport": "lap_swimming"}, {"id": 21206276907, "date": "2025-12-08", "name": "Parque", "type": "strength_training", "duration": 2055.43603515625, "distance": 0.0, "avg_hr": 122.0, "max_hr": 164.0, "calories": 223.0, "sport": "strength_training"}, {"id": 21196172227, "date": "2025-12-07", "name": "Natación en piscina", "type": "lap_swimming", "duration": 244.96800231933594, "distance": 102.0, "avg_hr": 138.0, "max_hr": 164.0, "calories": 37.0, "sport": "lap_swimming"}, {"id": 21196172032, "date": "2025-12-07", "name": "Natación en piscina", "type": "lap_swimming", "duration": 243.08099365234375, "distance": 170.0, "avg_hr": 130.0, "max_hr": 163.0, "calories": 29.0, "sport": "lap_swimming"}, {"id": 21189281955, "date": "2025-12-06", "name": "Cali Caminar", "type": "walking", "duration": 560.291015625, "distance": 748.27001953125, "avg_hr": 99.0, "max_hr": 114.0, "calories": 46.0, "sport": "walking"}, {"id": 21172451317, "date": "2025-12-04", "name": "Cali Caminar", "type": "walking", "duration": 912.3489990234375, "distance": 1190.68994140625, "avg_hr": 94.0, "max_hr": 107.0, "calories": 68.0, "sport": "walking"}, {"id": 21145216443, "date": "2025-11-30", "name": "Natación en piscina", "type": "lap_swimming", "duration": 540.6300048828125, "distance": 374.0, "avg_hr": 136.0, "max_hr": 163.0, "calories": 72.0, "sport": "lap_swimming"}, {"id": 21145216293, "date": "2025-11-30", "name": "Strength", "type": "strength_training", "duration": 1578.9090576171875, "distance": 0.0, "avg_hr": 115.0, "max_hr": 156.0, "calories": 154.0, "sport": "strength_training"}, {"id": 21127466641, "date": "2025-11-29", "name": "Cali Caminar", "type": "walking", "duration": 844.6300048828125, "distance": 1338.7900390625, "avg_hr": 107.0, "max_hr": 124.0, "calories": 78.0, "sport": "walking"}, {"id": 21127466625, "date": "2025-11-29", "name": "Cali Caminar", "type": "walking", "duration": 580.6259765625, "distance": 945.3099975585938, "avg_hr": 114.0, "max_hr": 130.0, "calories": 56.0, "sport": "walking"}, {"id": 21117813002, "date": "2025-11-28", "name": "Cali Caminar", "type": "walking", "duration": 610.5440063476562, "distance": 975.3400268554688, "avg_hr": 84.0, "max_hr": 95.0, "calories": 57.0, "sport": "walking"}, {"id": 21081920268, "date": "2025-11-24", "name": "Cali Caminar", "type": "walking", "duration": 715.041015625, "distance": 1040.31005859375, "avg_hr": 101.0, "max_hr": 110.0, "calories": 60.0, "sport": "walking"}, {"id": 21056596339, "date": "2025-11-21", "name": "Cali Caminar", "type": "walking", "duration": 835.3270263671875, "distance": 877.7999877929688, "avg_hr": 99.0, "max_hr": 107.0, "calories": 58.0, "sport": "walking"}, {"id": 21056596161, "date": "2025-11-21", "name": "Cali Caminar", "type": "walking", "duration": 983.3040161132812, "distance": 1003.47998046875, "avg_hr": 81.0, "max_hr": 94.0, "calories": 62.0, "sport": "walking"}, {"id": 21046532833, "date": "2025-11-20", "name": "Cali Caminar", "type": "walking", "duration": 422.8739929199219, "distance": 605.4099731445312, "avg_hr": 106.0, "max_hr": 119.0, "calories": 36.0, "sport": "walking"}, {"id": 21046532576, "date": "2025-11-20", "name": "Cali Caminar", "type": "walking", "duration": 1459.862060546875, "distance": 1560.2099609375, "avg_hr": 117.0, "max_hr": 132.0, "calories": 116.0, "sport": "walking"}, {"id": 21033237709, "date": "2025-11-19", "name": "Cali Caminar", "type": "walking", "duration": 708.5339965820312, "distance": 1007.8900146484375, "avg_hr": 122.0, "max_hr": 138.0, "calories": 63.0, "sport": "walking"}, {"id": 21033136103, "date": "2025-11-19", "name": "Upper", "type": "strength_training", "duration": 3218.906982421875, "distance": 0.0, "avg_hr": 115.0, "max_hr": 158.0, "calories": 305.0, "sport": "strength_training"}, {"id": 20966492022, "date": "2025-11-11", "name": "Cali Caminar", "type": "walking", "duration": 1586.906005859375, "distance": 1604.56005859375, "avg_hr": 99.0, "max_hr": 113.0, "calories": 111.0, "sport": "walking"}, {"id": 20923510102, "date": "2025-11-07", "name": "Upper", "type": "strength_training", "duration": 3194.4560546875, "distance": 0.0, "avg_hr": 126.0, "max_hr": 176.0, "calories": 363.0, "sport": "strength_training"}], "meta": {"fetched_at": "2026-03-13", "user_name": null, "total_days": 91}};
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.getElementById('update-date').textContent = D.meta.fetched_at;
+document.getElementById('last-update').textContent = 'Actualizado: ' + D.meta.fetched_at;
+
+let currentPeriod = 7;
+
+function getSlice(arr, days) {
+  if (days >= 999) return arr;
+  return arr.slice(-days);
+}
+
+function avg(a) { return a.length ? Math.round(a.reduce((s,v)=>s+v,0)/a.length) : 0; }
+function avgF(a) { return a.length ? (a.reduce((s,v)=>s+v,0)/a.length).toFixed(1) : '—'; }
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')===`showView('${name}'`) n.classList.add('active');
+    else if(n.getAttribute('onclick')&&n.getAttribute('onclick').startsWith('showView')) n.classList.remove('active');
+  });
+  document.getElementById('view-'+name).classList.add('active');
+  setTimeout(()=>renderView(name),50);
+}
+
+function setPeriod(days, el) {
+  currentPeriod = days;
+  document.querySelectorAll('[id^="p"]').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  const labels={7:'Últimos 7 días',30:'Últimos 30 días',999:'Historial completo'};
+  document.getElementById('ov-period').textContent = labels[days];
+  document.getElementById('ov-chart-label').textContent = labels[days];
+  document.getElementById('sl-tbl-label').textContent = labels[days];
+  renderView('overview');
+}
+
+function renderView(n) {
+  if(n==='overview') renderOverview();
+  else if(n==='hrv') renderHRV();
+  else if(n==='sleep') renderSleep();
+  else if(n==='readiness') renderReadiness();
+  else if(n==='activities') renderActivities();
+  else if(n==='goals') renderGoals();
+}
+
+// ── Canvas helpers ────────────────────────────────────────────────────────────
+function sc(id) {
+  const c=document.getElementById(id); if(!c) return null;
+  const W=c.parentElement.clientWidth-40, H=parseInt(c.getAttribute('height')||150);
+  c.width=W; c.height=H;
+  const ctx=c.getContext('2d'); ctx.clearRect(0,0,W,H);
+  return {ctx,W,H};
+}
+
+function grid(ctx,W,H,pt,rows=4) {
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1;
+  for(let i=0;i<=rows;i++) { const y=pt+(H-pt*2)*i/rows; ctx.beginPath();ctx.moveTo(pt,y);ctx.lineTo(W-pt,y);ctx.stroke(); }
+}
+
+function line(ctx,pts,color,w=2,dash=false) {
+  if(!pts.length) return; ctx.save();
+  ctx.strokeStyle=color;ctx.lineWidth=w;ctx.lineJoin='round';ctx.lineCap='round';
+  if(dash) ctx.setLineDash([4,4]);
+  ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.stroke(); ctx.restore();
+}
+
+// ── Overview ──────────────────────────────────────────────────────────────────
+function renderOverview() {
+  const sl = getSlice(D.sleep, currentPeriod);
+  const hv = getSlice(D.hrv, currentPeriod);
+  const tr = getSlice(D.readiness, currentPeriod);
+  const hr = getSlice(D.hr, currentPeriod);
+
+  const hvVals = hv.map(r=>r.weekly_avg||r.last_night).filter(Boolean);
+  const slVals = sl.map(r=>r.total).filter(Boolean);
+  const trVals = tr.map(r=>r.score).filter(v=>v!=null);
+  const hrVals = hr.map(r=>r.resting).filter(Boolean);
+
+  const hA=avg(hvVals), sA=parseFloat(avgF(slVals)), tA=avg(trVals), hR=avg(hrVals);
+
+  document.getElementById('kv-hrv').innerHTML=`${hA}<span class="stat-unit">ms</span>`;
+  document.getElementById('kv-hrv-s').textContent=`Status: ${hv[hv.length-1]?.status||'—'}`;
+  const hb=document.getElementById('kv-hrv-b');
+  if(hA>=75){hb.textContent='↑ GOOD';hb.className='badge bg';}
+  else if(hA>=55){hb.textContent='→ OK';hb.className='badge bw';}
+  else{hb.textContent='↓ LOW';hb.className='badge br';}
+
+  document.getElementById('kv-sl').innerHTML=`${avgF(slVals)}<span class="stat-unit">h</span>`;
+  document.getElementById('kv-sl-s').textContent=`Profundo prom: ${avg(sl.map(r=>r.deep).filter(Boolean))}m`;
+  const sb=document.getElementById('kv-sl-b');
+  if(sA>=7.5){sb.textContent='✓ META';sb.className='badge bg';}
+  else if(sA>=6){sb.textContent='→ OK';sb.className='badge bw';}
+  else{sb.textContent='↓ BAJO';sb.className='badge br';}
+
+  document.getElementById('kv-tr').innerHTML=`${tA}<span class="stat-unit">/100</span>`;
+  const last=tr[tr.length-1];
+  document.getElementById('kv-tr-s').textContent=last?.level||'—';
+  const tb=document.getElementById('kv-tr-b');
+  if(tA>=75){tb.textContent='HIGH';tb.className='badge bg';}
+  else if(tA>=55){tb.textContent='MOD';tb.className='badge bw';}
+  else{tb.textContent='LOW';tb.className='badge br';}
+
+  document.getElementById('kv-hr').innerHTML=`${hR||'—'}<span class="stat-unit">bpm</span>`;
+
+  // Chart
+  const cv=sc('ov-chart'); if(!cv) return; const {ctx,W,H}=cv;
+  const pad={t:20,b:28,l:32,r:12}; const PW=W-pad.l-pad.r, PH=H-pad.t-pad.b;
+  grid(ctx,W,H,pad.t);
+  const dates=[...new Set([...hv.map(r=>r.date),...tr.map(r=>r.date)])].sort();
+  const hvByDate=Object.fromEntries(hv.map(r=>[r.date,r.weekly_avg||r.last_night]));
+  const trByDate=Object.fromEntries(tr.map(r=>[r.date,r.score]));
+  const hvPts=dates.map((d,i)=>hvByDate[d]?{x:pad.l+(i/(dates.length-1||1))*PW,y:pad.t+PH-(hvByDate[d]-20)/80*PH}:null).filter(Boolean);
+  const trPts=dates.map((d,i)=>trByDate[d]!=null?{x:pad.l+(i/(dates.length-1||1))*PW,y:pad.t+PH-(trByDate[d]/100)*PH}:null).filter(Boolean);
+  if(hvPts.length>1){
+    ctx.beginPath();ctx.moveTo(hvPts[0].x,H-pad.b);hvPts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.lineTo(hvPts[hvPts.length-1].x,H-pad.b);ctx.closePath();
+    const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(99,179,237,0.15)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fill();
+    line(ctx,hvPts,'rgba(99,179,237,0.9)',2);
+  }
+  if(trPts.length>1) line(ctx,trPts,'rgba(236,201,75,0.7)',1.5,true);
+  ctx.font='9px IBM Plex Mono';ctx.fillStyle='rgba(113,128,150,0.7)';ctx.textAlign='center';
+  const step=Math.ceil(dates.length/8);
+  dates.forEach((d,i)=>{if(i%step!==0)return;ctx.fillText(d.slice(5),pad.l+(i/(dates.length-1||1))*PW,H-2);});
+  ctx.textAlign='right';
+  [20,40,60,80,100].forEach(v=>ctx.fillText(v,pad.l-4,pad.t+PH-(v-20)/80*PH+3));
+
+  // Insights
+  const ins=document.getElementById('ov-insights'); ins.innerHTML='';
+  if(last) {
+    const hv2=hv[hv.length-1]; const sl2=sl[sl.length-1];
+    const hvV=hv2?.weekly_avg||hv2?.last_night;
+    if(hvV&&hvV<55) ins.innerHTML+=`<div class="insight-card ic-crit"><div>⚠</div><div><div class="ih">VFC Bajo (${hvV}ms)</div><div class="ib">Por debajo de zona saludable. Prioriza descanso.</div></div></div>`;
+    else if(hvV&&hvV>=75) ins.innerHTML+=`<div class="insight-card ic-good"><div>✓</div><div><div class="ih">VFC Saludable (${hvV}ms)</div><div class="ib">En zona óptima. Buen momento para entrenar.</div></div></div>`;
+    else if(hvV) ins.innerHTML+=`<div class="insight-card ic-warn"><div>→</div><div><div class="ih">VFC Moderado (${hvV}ms)</div><div class="ib">Zona aceptable. Entrena con control de intensidad.</div></div></div>`;
+    if(sl2) {
+      if(sl2.total<6) ins.innerHTML+=`<div class="insight-card ic-crit"><div>🌙</div><div><div class="ih">Sueño Insuficiente (${sl2.total}h)</div><div class="ib">Déficit severo. VFC y Readiness se verán afectados mañana.</div></div></div>`;
+      else if(sl2.total>=7.5) ins.innerHTML+=`<div class="insight-card ic-good"><div>✓</div><div><div class="ih">Sueño Óptimo (${sl2.total}h)</div><div class="ib">Meta alcanzada. Continúa con este patrón.</div></div></div>`;
+    }
+    if(last.score<=30) ins.innerHTML+=`<div class="insight-card ic-crit"><div>⚡</div><div><div class="ih">Readiness Crítico (${last.score})</div><div class="ib">Solo actividad muy suave hoy.</div></div></div>`;
+    else if(last.score>=80) ins.innerHTML+=`<div class="insight-card ic-good"><div>⚡</div><div><div class="ih">Readiness Óptimo (${last.score})</div><div class="ib">Día ideal para entrenamiento de calidad.</div></div></div>`;
+  }
+
+  // Sleep table
+  const tb=document.getElementById('sl-tbody'); tb.innerHTML='';
+  [...sl].reverse().forEach(r=>{
+    const tot=r.deep+r.rem+r.light||1;
+    tb.innerHTML+=`<tr>
+      <td style="color:var(--text)">${r.date.slice(5)}</td>
+      <td style="color:${r.total>=7.5?'var(--green)':r.total>=6?'var(--yellow)':'var(--red)'}"><b>${r.total}h</b></td>
+      <td style="color:${r.deep>=60?'var(--teal)':'var(--muted2)'}"><b>${r.deep}m</b></td>
+      <td style="color:${r.rem>=90?'var(--purple)':'var(--muted2)'}"><b>${r.rem}m</b></td>
+      <td>${r.light}m</td>
+      <td><div class="sleep-bar" style="width:100px"><div class="sd" style="width:${r.deep/tot*100}%"></div><div class="sr" style="width:${r.rem/tot*100}%"></div><div class="sl" style="width:${r.light/tot*100}%"></div></div></td>
+      <td style="color:var(--muted)">${r.resp?r.resp.toFixed(1)+'rpm':'—'}</td>
+      <td style="color:var(--muted)">${r.spo2?r.spo2+'%':'—'}</td>
+    </tr>`;
+  });
+}
+
+// ── HRV ───────────────────────────────────────────────────────────────────────
+function renderHRV() {
+  const last30=D.hrv.slice(-30);
+  const vals=last30.map(r=>r.weekly_avg||r.last_night).filter(Boolean);
+  document.getElementById('hv-avg').innerHTML=`${avg(vals)}<span class="stat-unit">ms</span>`;
+  document.getElementById('hv-min').innerHTML=`${Math.min(...vals)}<span class="stat-unit">ms</span>`;
+  document.getElementById('hv-max').innerHTML=`${Math.max(...vals)}<span class="stat-unit">ms</span>`;
+  const last=D.hrv[D.hrv.length-1];
+  document.getElementById('hv-status').textContent=last?.status||'—';
+
+  const cv=sc('hrv-chart'); if(!cv) return; const {ctx,W,H}=cv;
+  const d=D.hrv, pad={t:20,b:28,l:32,r:12}, PW=W-pad.l-pad.r, PH=H-pad.t-pad.b;
+  const hMin=0,hMax=110; grid(ctx,W,H,pad.t);
+  d.forEach((r,i)=>{
+    if(!r.weekly_avg&&!r.last_night) return;
+    const v=r.weekly_avg||r.last_night;
+    const x=pad.l+(i/(d.length-1||1))*PW, y=pad.t+PH-(v-hMin)/(hMax-hMin)*PH;
+    if(i>0&&(d[i-1].weekly_avg||d[i-1].last_night)){
+      const pv=d[i-1].weekly_avg||d[i-1].last_night, px=pad.l+((i-1)/(d.length-1||1))*PW, py=pad.t+PH-(pv-hMin)/(hMax-hMin)*PH;
+      ctx.strokeStyle=v>=60?'rgba(72,187,120,0.8)':'rgba(252,129,129,0.8)';
+      ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(x,y);ctx.stroke();
+    }
+    ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.fillStyle=v>=60?'var(--green)':'var(--red)';ctx.fill();
+  });
+  ctx.font='9px IBM Plex Mono';ctx.fillStyle='rgba(113,128,150,0.7)';ctx.textAlign='right';
+  [0,30,60,90].forEach(v=>ctx.fillText(v,pad.l-4,pad.t+PH-(v-hMin)/(hMax-hMin)*PH+3));
+  ctx.textAlign='center';const step=Math.ceil(d.length/10);
+  d.forEach((r,i)=>{if(i%step)return;ctx.fillText(r.date.slice(5),pad.l+(i/(d.length-1||1))*PW,H-2);});
+
+  // Calendar
+  const cal=document.getElementById('hrv-cal'); cal.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:3px">';
+  last30.forEach(r=>{
+    const v=r.weekly_avg||r.last_night||0;
+    const c=v>=75?'rgba(72,187,120,0.8)':v>=55?'rgba(236,201,75,0.7)':'rgba(252,129,129,0.7)';
+    cal.innerHTML+=`<div title="${r.date}: ${v}ms" style="background:${c};color:#0d1117;border-radius:3px;padding:3px 5px;font-size:9px;font-weight:600">${v}</div>`;
+  });
+  cal.innerHTML+='</div>';
+
+  // Scatter
+  const sv=sc('hrv-scatter'); if(!sv) return; const {ctx:sc2,W:sw,H:sh}=sv;
+  const trByD=Object.fromEntries(D.readiness.map(r=>[r.date,r.score]));
+  grid(sc2,sw,sh,20);
+  D.hrv.forEach(r=>{
+    const v=r.weekly_avg||r.last_night, tr=trByD[r.date];
+    if(!v||!tr) return;
+    const x=20+(v/110)*(sw-40), y=sh-20-(tr/100)*(sh-40);
+    sc2.beginPath();sc2.arc(x,y,4,0,Math.PI*2);
+    sc2.fillStyle=v>=60?'rgba(72,187,120,0.7)':'rgba(252,129,129,0.7)';sc2.fill();
+  });
+  sc2.font='9px IBM Plex Mono';sc2.fillStyle='rgba(113,128,150,0.6)';sc2.textAlign='center';
+  sc2.fillText('VFC →',sw/2,sh-2);
+}
+
+// ── Sleep ────────────────────────────────────────────────────────────────────
+function renderSleep() {
+  const last30=D.sleep.slice(-30);
+  document.getElementById('sv-avg').innerHTML=`${avgF(last30.map(r=>r.total))}<span class="stat-unit">h</span>`;
+  document.getElementById('sv-deep').innerHTML=`${avg(last30.map(r=>r.deep).filter(Boolean))}<span class="stat-unit">m</span>`;
+  document.getElementById('sv-rem').innerHTML=`${avg(last30.map(r=>r.rem).filter(Boolean))}<span class="stat-unit">m</span>`;
+  const resps=last30.map(r=>r.resp).filter(Boolean);
+  document.getElementById('sv-resp').innerHTML=`${resps.length?avgF(resps):'—'}<span class="stat-unit">rpm</span>`;
+
+  const d=D.sleep.slice(-45);
+  const cv=sc('sl-chart'); if(!cv) return; const {ctx,W,H}=cv;
+  const pad={t:20,b:28,l:32,r:12}, PW=W-pad.l-pad.r, PH=H-pad.t-pad.b;
+  const maxH=12; grid(ctx,W,H,pad.t);
+  // 7h line
+  ctx.strokeStyle='rgba(113,128,150,0.3)';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  const y7=pad.t+PH-(7/maxH)*PH; ctx.beginPath();ctx.moveTo(pad.l,y7);ctx.lineTo(W-pad.r,y7);ctx.stroke();
+  ctx.setLineDash([]);
+  const bw=Math.max(3,PW/d.length-2);
+  d.forEach((r,i)=>{
+    const x=pad.l+(i/(d.length-1||1))*PW-bw/2;
+    let y=pad.t+PH;
+    [[r.deep,'rgba(79,209,197,0.85)'],[r.rem,'rgba(183,148,244,0.85)'],[r.light,'rgba(99,179,237,0.6)']].forEach(([m,c])=>{
+      const bh=(m/60/maxH)*PH; y-=bh; ctx.fillStyle=c; ctx.fillRect(x,y,bw,bh);
+    });
+  });
+  ctx.font='9px IBM Plex Mono';ctx.fillStyle='rgba(113,128,150,0.7)';ctx.textAlign='center';
+  const step=Math.ceil(d.length/10);
+  d.forEach((r,i)=>{if(i%step)return;ctx.fillText(r.date.slice(5),pad.l+(i/(d.length-1||1))*PW,H-2);});
+  ctx.textAlign='right';[0,3,6,9,12].forEach(v=>ctx.fillText(v+'h',pad.l-4,pad.t+PH-(v/maxH)*PH+3));
+}
+
+// ── Readiness ─────────────────────────────────────────────────────────────────
+function renderReadiness() {
+  const d=D.readiness; const last30=d.slice(-30);
+  const scores=last30.map(r=>r.score).filter(v=>v!=null);
+  const maxR=Math.max(...d.map(r=>r.score||0)); const maxRd=d.find(r=>r.score===maxR);
+  document.getElementById('tr-max').innerHTML=`${maxR}<span class="stat-unit">/100</span>`;
+  document.getElementById('tr-max-d').textContent=maxRd?.date||'—';
+  document.getElementById('tr-avg').innerHTML=`${avg(scores)}<span class="stat-unit">/100</span>`;
+  document.getElementById('tr-bad').innerHTML=`${last30.filter(r=>r.level==='POOR'||r.level==='LOW').length}<span class="stat-unit">d</span>`;
+  const last=d[d.length-1];
+  document.getElementById('tr-today').innerHTML=`${last?.score||'—'}<span class="stat-unit">/100</span>`;
+  document.getElementById('tr-today-l').textContent=last?.level||'—';
+
+  const cv=sc('tr-chart'); if(!cv) return; const {ctx,W,H}=cv;
+  const pad={t:20,b:28,l:32,r:12}, PW=W-pad.l-pad.r, PH=H-pad.t-pad.b;
+  grid(ctx,W,H,pad.t);
+  // fill
+  const valid=d.map((r,i)=>r.score!=null?{x:pad.l+(i/(d.length-1||1))*PW,y:pad.t+PH-(r.score/100)*PH,l:r.level}:null).filter(Boolean);
+  if(valid.length>1){
+    ctx.beginPath();ctx.moveTo(valid[0].x,H-pad.b);valid.forEach(p=>ctx.lineTo(p.x,p.y));ctx.lineTo(valid[valid.length-1].x,H-pad.b);ctx.closePath();
+    const g=ctx.createLinearGradient(0,pad.t,0,H-pad.b);g.addColorStop(0,'rgba(236,201,75,0.12)');g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fill();
+    valid.forEach((p,i)=>{
+      if(!i) return; const pv=valid[i-1];
+      const c={PRIME:'rgba(99,179,237,.9)',HIGH:'rgba(72,187,120,.9)',MODERATE:'rgba(236,201,75,.8)',LOW:'rgba(246,173,85,.8)',POOR:'rgba(252,129,129,.9)'}[p.l]||'rgba(255,255,255,0.3)';
+      ctx.strokeStyle=c;ctx.lineWidth=2;ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(pv.x,pv.y);ctx.lineTo(p.x,p.y);ctx.stroke();
+    });
+  }
+  ctx.font='9px IBM Plex Mono';ctx.fillStyle='rgba(113,128,150,0.7)';ctx.textAlign='right';
+  [0,25,50,75,100].forEach(v=>ctx.fillText(v,pad.l-4,pad.t+PH-(v/100)*PH+3));
+  ctx.textAlign='center'; const step=Math.ceil(d.length/10);
+  d.forEach((r,i)=>{if(i%step)return;ctx.fillText(r.date.slice(5),pad.l+(i/(d.length-1||1))*PW,H-2);});
+}
+
+// ── Activities ────────────────────────────────────────────────────────────────
+function renderActivities() {
+  const tb=document.getElementById('act-tbody'); tb.innerHTML='';
+  const typeLabels={swimming:'🏊 Natación',running:'🏃 Trote',cycling:'🚴 Bici',walking:'🚶 Caminata',strength_training:'💪 Fuerza',pool_swimming:'🏊 Natación',open_water_swimming:'🌊 Aguas abiertas'};
+  D.activities.slice(0,30).forEach(a=>{
+    const dur=a.duration?Math.round(a.duration/60)+'min':'—';
+    const dist=a.distance?((a.distance/1000).toFixed(1)+'km'):'—';
+    tb.innerHTML+=`<tr>
+      <td style="color:var(--text)">${a.date.slice(5)}</td>
+      <td><span class="tag tm">${typeLabels[a.type]||a.type||'—'}</span></td>
+      <td style="color:var(--muted2)">${a.name||'—'}</td>
+      <td>${dur}</td><td>${dist}</td>
+      <td style="color:${a.avg_hr&&a.avg_hr>160?'var(--red)':a.avg_hr&&a.avg_hr>140?'var(--yellow)':'var(--green)'}"><b>${a.avg_hr||'—'}</b></td>
+      <td style="color:var(--muted)">${a.max_hr||'—'}</td>
+      <td style="color:var(--muted)">${a.calories||'—'}</td>
+    </tr>`;
+  });
+  if(!D.activities.length) tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No hay actividades registradas</td></tr>';
+}
+
+// ── Goals ─────────────────────────────────────────────────────────────────────
+function renderGoals() {
+  const lastHrv=D.hrv[D.hrv.length-1]; const hvV=lastHrv?.weekly_avg||lastHrv?.last_night||0;
+  const lastSl=D.sleep[D.sleep.length-1]; const lastTr=D.readiness[D.readiness.length-1];
+  const last30Sl=D.sleep.slice(-30); const avgSl=parseFloat(avgF(last30Sl.map(r=>r.total)));
+  const avgDeep=avg(last30Sl.map(r=>r.deep).filter(Boolean));
+  const lastHr=D.hr[D.hr.length-1];
+
+  const goals=[
+    {title:'VFC Baseline ≥75ms',val:hvV,max:100,color:'var(--cyan)',unit:'ms',sub:`Prom. 30d: ${avg(D.hrv.slice(-30).map(r=>r.weekly_avg||r.last_night).filter(Boolean))}ms`,advice:hvV>=75?'✓ En rango':'↑ Prioriza sueño'},
+    {title:'Sueño Profundo ≥60min',val:Math.min(avgDeep,120),max:120,color:'var(--teal)',unit:'min',sub:`Prom. 30d: ${avgDeep}min`,advice:avgDeep>=60?'✓ Meta alcanzada':'↑ Evita alcohol/pantallas'},
+    {title:'Total Sueño ≥7.5h',val:Math.min(avgSl*10,10),max:10,color:'var(--purple)',unit:'h',sub:`Prom. 30d: ${avgSl}h`,advice:avgSl>=7.5?'✓ Excelente':'↑ Acuéstate antes de medianoche'},
+    {title:'Readiness ≥70',val:lastTr?.score||0,max:100,color:'var(--yellow)',unit:'/100',sub:`Nivel: ${lastTr?.level||'—'}`,advice:lastTr?.score>=70?'✓ Listo para entrenar':'↑ VFC y sueño primero'},
+    {title:'HR Reposo ≤58bpm',val:Math.max(0,90-(lastHr?.resting||66)),max:90-58,color:'var(--red)',unit:'bpm actual',sub:`Actual: ${lastHr?.resting||'—'}bpm`,advice:(lastHr?.resting||99)<=58?'✓ Cardio fitness excelente':'↑ Entrena zona 2 regularmente'},
+    {title:'Natación ≥10 ses./mes',val:D.activities.filter(a=>(a.type||'').includes('swim')&&a.date>=(new Date(Date.now()-30*86400000)).toISOString().slice(0,10)).length,max:10,color:'var(--green)',unit:'sesiones',sub:'Este mes',advice:'Progresivo según VFC'},
+  ];
+
+  const grid3=document.getElementById('goals-grid'); grid3.innerHTML='';
+  goals.forEach(g=>{
+    const pct=Math.min(100,Math.round(g.val/g.max*100));
+    grid3.innerHTML+=`<div class="goal-card">
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:6px">${g.title}</div>
+      <div style="font-size:22px;font-weight:600;color:${g.color}">${typeof g.val==='number'?Math.round(g.val):g.val}<span style="font-size:11px;color:var(--muted)"> ${g.unit}</span></div>
+      <div class="gp"><div class="gf" style="width:${pct}%;background:${g.color}"></div></div>
+      <div class="gm"><span>${g.sub}</span><span>${pct}%</span></div>
+      <div style="font-size:10px;color:${pct>=80?'var(--green)':'pct>=50?'var(--yellow)'':'var(--red)'};margin-top:6px">${g.advice}</div>
+    </div>`;
+  });
+
+  // Swim advice
+  const adv=document.getElementById('goals-swim-advice');
+  if(hvV>=86) adv.style.cssText='background:rgba(99,179,237,.08);color:var(--cyan)';
+  else if(hvV>=71) adv.style.cssText='background:rgba(72,187,120,.08);color:var(--green)';
+  else if(hvV>=56) adv.style.cssText='background:rgba(236,201,75,.08);color:var(--yellow)';
+  else adv.style.cssText='background:rgba(252,129,129,.08);color:var(--red)';
+  const zoneMap=[[86,'PRIME · 10×50m, descanso 1:15, Z3–Z4'],[71,'HIGH · 12×34m, descanso 1:30, Z2'],[56,'MODERATE · 10×34m, descanso 1:45, Z1–Z2 ← ESTÁS AQUÍ'],[40,'LOW · 6×34m, descanso 2:00, Z1'],[0,'POOR · Solo caminata/movilidad']];
+  const zone=zoneMap.find(([min])=>hvV>=min);
+  adv.innerHTML=`📍 <strong>VFC actual: ${Math.round(hvV)}ms</strong> → ${zone?zone[1]:'—'}`;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+setTimeout(()=>renderOverview(), 100);
+window.addEventListener('resize',()=>{
+  const a=document.querySelector('.view.active');
+  if(a) renderView(a.id.replace('view-',''));
+});
+</script>
+</body>
+</html>
