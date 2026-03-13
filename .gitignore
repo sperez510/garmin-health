@@ -1,0 +1,18 @@
+# Credenciales y tokens — NUNCA subir esto
+.env
+data/.garmin_tokens
+data/*.token
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# macOS
+.DS_Store
+
+# El JSON de datos sí se sube (es generado por el bot, no tiene creds)
+# data/garmin_data.json  <-- este SÍ se versiona

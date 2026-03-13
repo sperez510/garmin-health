@@ -1,0 +1,2 @@
+# Este archivo existe para que git versione la carpeta docs/
+# El archivo index.html se genera automáticamente con build_dashboard.py
