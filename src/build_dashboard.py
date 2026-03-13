@@ -26,13 +26,16 @@ raw = json.loads(DATA_FILE.read_text())
 def normalize_sleep(records):
     out = []
     for r in records:
-        total = (r.get("deep_seconds",0) + r.get("light_seconds",0) + r.get("rem_seconds",0))
+        deep  = int(r.get("deep_seconds")  or 0)
+        light = int(r.get("light_seconds") or 0)
+        rem   = int(r.get("rem_seconds")   or 0)
+        total = deep + light + rem
         out.append({
             "date":  r["date"],
             "total": round(total/3600, 2),
-            "deep":  round(r.get("deep_seconds",0)/60),
-            "rem":   round(r.get("rem_seconds",0)/60),
-            "light": round(r.get("light_seconds",0)/60),
+            "deep":  round(deep/60),
+            "rem":   round(rem/60),
+            "light": round(light/60),
             "score": r.get("score"),
             "resp":  r.get("avg_respiration"),
             "hr":    r.get("avg_hr"),
