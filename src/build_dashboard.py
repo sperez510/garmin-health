@@ -353,7 +353,7 @@ function avgF(a) {{ return a.length ? (a.reduce((s,v)=>s+v,0)/a.length).toFixed(
 function showView(name) {{
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>{{
-    if(n.getAttribute('onclick')===`showView('${{name}}'`) n.classList.add('active');
+    if(n.getAttribute('onclick')===`showView('${{name}}')`) n.classList.add('active');
     else if(n.getAttribute('onclick')&&n.getAttribute('onclick').startsWith('showView')) n.classList.remove('active');
   }});
   document.getElementById('view-'+name).classList.add('active');
