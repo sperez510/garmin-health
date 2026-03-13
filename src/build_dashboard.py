@@ -29,7 +29,10 @@ def normalize_sleep(records):
         deep  = int(r.get("deep_seconds")  or 0)
         light = int(r.get("light_seconds") or 0)
         rem   = int(r.get("rem_seconds")   or 0)
-        total = deep + light + rem
+        total_s = int(r.get("total_seconds") or 0)
+        if deep == 0 and light == 0 and rem == 0 and total_s == 0:
+            continue
+        total = deep + light + rem if (deep + light + rem) > 0 else total_s
         out.append({
             "date":  r["date"],
             "total": round(total/3600, 2),
@@ -46,11 +49,19 @@ def normalize_sleep(records):
 def normalize_hrv(records):
     out = []
     for r in records:
+        readings = [x for x in (r.get("readings") or []) if x and x > 0]
+        computed_avg = round(sum(readings)/len(readings)) if readings else None
+        hrv_val = r.get("weekly_avg") or r.get("last_night") or r.get("last_5min") or computed_avg
+        if not hrv_val:
+            continue
+        status = r.get("status") or ""
+        if status.upper() in ("NONE", "UNKNOWN", ""):
+            status = "BALANCED" if hrv_val >= 60 else "LOW"
         out.append({
             "date":       r["date"],
-            "weekly_avg": r.get("weekly_avg"),
-            "last_night": r.get("last_night"),
-            "status":     r.get("status", "").upper(),
+            "weekly_avg": hrv_val,
+            "last_night": hrv_val,
+            "status":     status.upper(),
         })
     return sorted(out, key=lambda x: x["date"])
 
