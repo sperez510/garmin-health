@@ -1,25 +1,10 @@
 {
   "meta": {
-    "fetched_at": "2026-03-14",
+    "fetched_at": "2026-03-15",
     "days_back": 90,
     "email": "sebastian.perez.ramirez.21@***"
   },
   "sleep": [
-    {
-      "date": "2025-12-14",
-      "total_seconds": 22140,
-      "deep_seconds": 4200,
-      "light_seconds": 17940,
-      "rem_seconds": 0,
-      "awake_seconds": 3960,
-      "score": 38,
-      "avg_spo2": null,
-      "avg_respiration": null,
-      "avg_stress": null,
-      "avg_hr": null,
-      "start": 1765680000000,
-      "end": 1765706100000
-    },
     {
       "date": "2025-12-15",
       "total_seconds": 26099,
@@ -1357,6 +1342,21 @@
     },
     {
       "date": "2026-03-14",
+      "total_seconds": 20160,
+      "deep_seconds": 6420,
+      "light_seconds": 10980,
+      "rem_seconds": 2760,
+      "awake_seconds": 300,
+      "score": 55,
+      "avg_spo2": 96.0,
+      "avg_respiration": null,
+      "avg_stress": null,
+      "avg_hr": null,
+      "start": 1773460272000,
+      "end": 1773480732000
+    },
+    {
+      "date": "2026-03-15",
       "total_seconds": null,
       "deep_seconds": null,
       "light_seconds": null,
@@ -6116,6 +6116,84 @@
         67,
         63
       ]
+    },
+    {
+      "date": "2026-03-14",
+      "weekly_avg": 59,
+      "last_night": null,
+      "last_5min": 79,
+      "status": "LOW",
+      "baseline_low": "2026-03-14T03:51:12.0",
+      "readings": [
+        69,
+        57,
+        61,
+        63,
+        60,
+        64,
+        47,
+        49,
+        49,
+        63,
+        61,
+        67,
+        64,
+        63,
+        68,
+        68,
+        66,
+        54,
+        57,
+        58,
+        58,
+        54,
+        59,
+        56,
+        56,
+        61,
+        56,
+        59,
+        57,
+        54,
+        58,
+        55,
+        79,
+        64,
+        70,
+        67,
+        53,
+        60,
+        61,
+        65,
+        59,
+        62,
+        66,
+        57,
+        60,
+        72,
+        60,
+        48,
+        47,
+        60,
+        52,
+        47,
+        51,
+        47,
+        50,
+        46,
+        50,
+        47,
+        61,
+        60,
+        73,
+        66,
+        70,
+        68,
+        66,
+        68,
+        62,
+        63
+      ]
     }
   ],
   "readiness": [],
@@ -6856,12 +6934,6 @@
   ],
   "body_battery": [
     {
-      "date": "2025-12-14",
-      "min": 5,
-      "max": 41,
-      "end": 19
-    },
-    {
       "date": "2025-12-15",
       "min": 14,
       "max": 98,
@@ -7277,21 +7349,24 @@
     },
     {
       "date": "2026-03-13",
-      "min": 14,
+      "min": 5,
       "max": 84,
-      "end": 14
+      "end": 5
+    },
+    {
+      "date": "2026-03-14",
+      "min": 5,
+      "max": 37,
+      "end": 5
+    },
+    {
+      "date": "2026-03-15",
+      "min": 5,
+      "max": 5,
+      "end": 5
     }
   ],
   "stress": [
-    {
-      "date": "2025-12-14",
-      "avg": 32,
-      "max": 87,
-      "rest_pct": 0,
-      "low_pct": 0,
-      "medium_pct": 0,
-      "high_pct": 0
-    },
     {
       "date": "2025-12-15",
       "avg": 28,
@@ -7915,8 +7990,26 @@
     },
     {
       "date": "2026-03-13",
-      "avg": 39,
+      "avg": 43,
       "max": 92,
+      "rest_pct": 0,
+      "low_pct": 0,
+      "medium_pct": 0,
+      "high_pct": 0
+    },
+    {
+      "date": "2026-03-14",
+      "avg": 47,
+      "max": 95,
+      "rest_pct": 0,
+      "low_pct": 0,
+      "medium_pct": 0,
+      "high_pct": 0
+    },
+    {
+      "date": "2026-03-15",
+      "avg": 24,
+      "max": 70,
       "rest_pct": 0,
       "low_pct": 0,
       "medium_pct": 0,
@@ -7924,10 +8017,6 @@
     }
   ],
   "steps": [
-    {
-      "date": "2025-12-14",
-      "total": 6858
-    },
     {
       "date": "2025-12-15",
       "total": 11900
@@ -8206,16 +8295,18 @@
     },
     {
       "date": "2026-03-13",
-      "total": 8524
+      "total": 10776
+    },
+    {
+      "date": "2026-03-14",
+      "total": 7543
+    },
+    {
+      "date": "2026-03-15",
+      "total": 376
     }
   ],
   "heart_rate": [
-    {
-      "date": "2025-12-14",
-      "resting": 60,
-      "max": 121,
-      "min": 57
-    },
     {
       "date": "2025-12-15",
       "resting": 50,
@@ -8747,14 +8838,20 @@
     {
       "date": "2026-03-13",
       "resting": 58,
-      "max": 109,
+      "max": 134,
       "min": 55
     },
     {
       "date": "2026-03-14",
-      "resting": null,
-      "max": null,
-      "min": null
+      "resting": 64,
+      "max": 119,
+      "min": 58
+    },
+    {
+      "date": "2026-03-15",
+      "resting": 64,
+      "max": 98,
+      "min": 62
     }
   ],
   "endurance": null,
