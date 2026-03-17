@@ -1,25 +1,10 @@
 {
   "meta": {
-    "fetched_at": "2026-03-16",
+    "fetched_at": "2026-03-17",
     "days_back": 90,
     "email": "sebastian.perez.ramirez.21@***"
   },
   "sleep": [
-    {
-      "date": "2025-12-16",
-      "total_seconds": 26396,
-      "deep_seconds": 6000,
-      "light_seconds": 15960,
-      "rem_seconds": 4440,
-      "awake_seconds": 1800,
-      "score": 78,
-      "avg_spo2": null,
-      "avg_respiration": null,
-      "avg_stress": null,
-      "avg_hr": null,
-      "start": 1765842060000,
-      "end": 1765870256000
-    },
     {
       "date": "2025-12-17",
       "total_seconds": 28560,
@@ -1357,6 +1342,21 @@
     },
     {
       "date": "2026-03-16",
+      "total_seconds": 24643,
+      "deep_seconds": 7800,
+      "light_seconds": 14100,
+      "rem_seconds": 2760,
+      "awake_seconds": 660,
+      "score": 77,
+      "avg_spo2": 95.0,
+      "avg_respiration": null,
+      "avg_stress": null,
+      "avg_hr": null,
+      "start": 1773618221000,
+      "end": 1773643524000
+    },
+    {
+      "date": "2026-03-17",
       "total_seconds": null,
       "deep_seconds": null,
       "light_seconds": null,
@@ -6271,11 +6271,130 @@
         96,
         101
       ]
+    },
+    {
+      "date": "2026-03-16",
+      "weekly_avg": 70,
+      "last_night": null,
+      "last_5min": 116,
+      "status": "BALANCED",
+      "baseline_low": "2026-03-15T23:43:41.0",
+      "readings": [
+        53,
+        47,
+        46,
+        41,
+        43,
+        46,
+        45,
+        52,
+        63,
+        54,
+        57,
+        52,
+        56,
+        51,
+        58,
+        57,
+        53,
+        58,
+        60,
+        67,
+        70,
+        69,
+        73,
+        77,
+        85,
+        91,
+        88,
+        92,
+        77,
+        87,
+        102,
+        99,
+        83,
+        79,
+        80,
+        78,
+        78,
+        75,
+        79,
+        81,
+        80,
+        77,
+        84,
+        84,
+        90,
+        116,
+        97,
+        53,
+        66,
+        71,
+        69,
+        51,
+        48,
+        67,
+        71,
+        80,
+        92,
+        70,
+        75,
+        76,
+        74,
+        74,
+        72,
+        75,
+        73,
+        79,
+        86,
+        78,
+        96,
+        111,
+        94,
+        84,
+        90,
+        92,
+        80,
+        93,
+        79,
+        55,
+        75,
+        99,
+        92,
+        107,
+        110,
+        109,
+        99
+      ]
     }
   ],
   "readiness": [],
   "training_load": [],
   "activities": [
+    {
+      "id": 22192596369,
+      "date": "2026-03-16",
+      "name": "Cali Caminar",
+      "type": "walking",
+      "duration": 728.5009765625,
+      "distance": 1036.530029296875,
+      "avg_hr": 107.0,
+      "max_hr": 135.0,
+      "calories": 62.0,
+      "sport": "walking"
+    },
+    {
+      "id": 22192595719,
+      "date": "2026-03-16",
+      "name": "Upper C sábado",
+      "type": "strength_training",
+      "duration": 3402.403076171875,
+      "distance": 0.0,
+      "avg_hr": 125.0,
+      "max_hr": 174.0,
+      "calories": 398.0,
+      "sport": "strength_training"
+    },
     {
       "id": 22155215514,
       "date": "2026-03-12",
@@ -7011,12 +7130,6 @@
   ],
   "body_battery": [
     {
-      "date": "2025-12-16",
-      "min": 11,
-      "max": 87,
-      "end": 11
-    },
-    {
       "date": "2025-12-17",
       "min": 5,
       "max": 65,
@@ -7435,18 +7548,21 @@
       "min": 5,
       "max": 66,
       "end": 5
+    },
+    {
+      "date": "2026-03-16",
+      "min": 5,
+      "max": 76,
+      "end": 5
+    },
+    {
+      "date": "2026-03-17",
+      "min": 5,
+      "max": 8,
+      "end": 8
     }
   ],
   "stress": [
-    {
-      "date": "2025-12-16",
-      "avg": 40,
-      "max": 95,
-      "rest_pct": 0,
-      "low_pct": 0,
-      "medium_pct": 0,
-      "high_pct": 0
-    },
     {
       "date": "2025-12-17",
       "avg": 51,
@@ -8070,8 +8186,26 @@
     },
     {
       "date": "2026-03-15",
-      "avg": 44,
+      "avg": 43,
       "max": 94,
+      "rest_pct": 0,
+      "low_pct": 0,
+      "medium_pct": 0,
+      "high_pct": 0
+    },
+    {
+      "date": "2026-03-16",
+      "avg": 46,
+      "max": 98,
+      "rest_pct": 0,
+      "low_pct": 0,
+      "medium_pct": 0,
+      "high_pct": 0
+    },
+    {
+      "date": "2026-03-17",
+      "avg": 13,
+      "max": 25,
       "rest_pct": 0,
       "low_pct": 0,
       "medium_pct": 0,
@@ -8079,10 +8213,6 @@
     }
   ],
   "steps": [
-    {
-      "date": "2025-12-16",
-      "total": 5264
-    },
     {
       "date": "2025-12-17",
       "total": 8456
@@ -8361,16 +8491,18 @@
     },
     {
       "date": "2026-03-15",
-      "total": 5575
+      "total": 5920
+    },
+    {
+      "date": "2026-03-16",
+      "total": 12180
+    },
+    {
+      "date": "2026-03-17",
+      "total": 0
     }
   ],
   "heart_rate": [
-    {
-      "date": "2025-12-16",
-      "resting": 56,
-      "max": 153,
-      "min": 53
-    },
     {
       "date": "2025-12-17",
       "resting": 57,
@@ -8907,9 +9039,15 @@
     },
     {
       "date": "2026-03-16",
-      "resting": null,
-      "max": null,
-      "min": null
+      "resting": 57,
+      "max": 144,
+      "min": 52
+    },
+    {
+      "date": "2026-03-17",
+      "resting": 60,
+      "max": 78,
+      "min": 59
     }
   ],
   "endurance": null,
